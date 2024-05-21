@@ -158,11 +158,32 @@ void postorder(struct node* root) {
 }
 
 struct node* inorderSuccessor(struct node* ptr) {
-    if (ptr->rthread == 1)
-        return ptr->right;
+    if (ptr->rthread == 1) {
+        return ptr->right; // If there is a right thread, return the threaded node
+    }
+    
+    // Move to the right child
     ptr = ptr->right;
-    while (ptr->lthread == 0)
+    // Find the leftmost node in the right subtree
+    while (ptr->lthread == 0) {
         ptr = ptr->left;
+    }
+    
+    return ptr;
+}
+
+struct node* inorderPredecessor(struct node* ptr) {
+    if (ptr->lthread == 1) {
+        return ptr->left; // If there is a left thread, return the threaded node
+    }
+    
+    // Move to the left child
+    ptr = ptr->left;
+    // Find the rightmost node in the left subtree
+    while (ptr->rthread == 0) {
+        ptr = ptr->right;
+    }
+    
     return ptr;
 }
 
@@ -222,7 +243,7 @@ struct node* deleteNode(struct node* root, int key) {
             parent->right = current->left;
         }
 
-        struct node* predecessor = inorderSuccessor(current);
+        struct node* predecessor = inorderPredecessor(current);
         predecessor->right = current->right;
         free(current);
     } else if (current->lthread == 1 && current->rthread == 0) {
