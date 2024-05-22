@@ -36,12 +36,34 @@ void insert(HashTable* hashTable, int key, int value) {
         hashTable->table[index].key = key;
         hashTable->table[index].value = value;
     } else { // Slot is occupied, perform linear probing
+        int originalIndex = index;
         int i = (index + 1) % TABLE_SIZE; // Start probing from next index
+
+        // Look for an empty slot or the slot with a key that can be replaced
         while (i != index) {
             if (hashTable->table[i].key == -1) { // Found an empty slot
                 hashTable->table[i].key = key;
                 hashTable->table[i].value = value;
-                hashTable->chain[index] = i; // Update chain for replacement
+                
+                // Update the chain of the original index
+                while (hashTable->chain[originalIndex] != -1) {
+                    originalIndex = hashTable->chain[originalIndex];
+                }
+                hashTable->chain[originalIndex] = i;
+                return;
+            }
+            
+            int existingKeyHash = hashFunction(hashTable->table[i].key);
+            if (existingKeyHash != i && existingKeyHash == index) { // Found a key that can be replaced
+                int displacedKey = hashTable->table[i].key;
+                int displacedValue = hashTable->table[i].value;
+
+                // Replace the current key-value pair
+                hashTable->table[i].key = key;
+                hashTable->table[i].value = value;
+
+                // Insert the displaced key-value pair
+                insert(hashTable, displacedKey, displacedValue);
                 return;
             }
             i = (i + 1) % TABLE_SIZE; // Move to next index
@@ -49,6 +71,24 @@ void insert(HashTable* hashTable, int key, int value) {
         // Table is full, cannot insert
         printf("Error: Hash table is full.\n");
     }
+}
+
+// Search in Hash Table
+int search(HashTable* hashTable, int key) {
+    int index = hashFunction(key);
+    if (hashTable->table[index].key == key) { // Found at original index
+        return index;
+    } else { // Check chain for the key
+        int chainIndex = hashTable->chain[index];
+        while (chainIndex != -1) {
+            if (hashTable->table[chainIndex].key == key) {
+                return chainIndex;
+            }
+            chainIndex = hashTable->chain[chainIndex];
+        }
+    }
+    // Key not found
+    return -1;
 }
 
 // Display Hash Table
@@ -68,9 +108,19 @@ int main() {
     insert(&hashTable, 94, 1); // Should go to index 4
     insert(&hashTable, 84, 2); // Should go to index 5 due to linear probing
     insert(&hashTable, 95, 3); // Should go to index 6 due to linear probing
+    insert(&hashTable, 85, 4); // Should replace 84 and move it to index 7 due to replacement
 
     // Displaying Hash Table
     displayHashTable(&hashTable);
+
+    // Searching for a key
+    int keyToSearch = 85;
+    int searchResult = search(&hashTable, keyToSearch);
+    if (searchResult != -1) {
+        printf("Key %d found at index %d\n", keyToSearch, searchResult);
+    } else {
+        printf("Key %d not found\n", keyToSearch);
+    }
 
     return 0;
 }
